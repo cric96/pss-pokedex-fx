@@ -2,7 +2,6 @@ package it.unibo.pokemon.core.impl;
 
 import it.unibo.pokemon.core.Pokedex;
 import it.unibo.pokemon.core.PokemonEntry;
-import it.unibo.pokemon.core.PokemonEntryFull;
 import it.unibo.pokemon.core.PokemonType;
 
 import java.util.List;
@@ -28,20 +27,22 @@ public class PokedexImpl implements Pokedex {
     @Override
     public Optional<PokemonEntry> searchPokemonByName(String name) {
         return pokemon.stream()
-            .filter(pokemon -> pokemon instanceof PokemonEntryFull)
-            .map(pokemonEntry -> (PokemonEntryFull) pokemonEntry)
             .filter(pokemonEntry -> pokemonEntry.getName().equals(name))
-            .findAny()
-            .map(pokemonEntry -> (PokemonEntry) pokemonEntry);
+            .findAny();
     }
 
     @Override
     public List<PokemonEntry> searchPokemonByType(PokemonType type) {
         return pokemon.stream()
-            .filter(pokemon -> pokemon instanceof PokemonEntryFull)
-            .map(pokemonEntry -> (PokemonEntryFull) pokemonEntry)
-            .filter(pokemonEntryFull -> pokemonEntryFull.getPrimaryType().equals(type))
-            .map(pokemonEntry -> (PokemonEntry) pokemonEntry)
+            .filter(pokemonEntry -> pokemonEntry.getPrimaryType().equals(type)
+                || pokemonEntry.getSecondaryType().filter(t -> t.equals(type)).isPresent())
             .toList();
+    }
+
+    @Override
+    public Optional<PokemonEntry> searchPokemonById(final int id) {
+        return pokemon.stream()
+            .filter(pokemonEntry -> pokemonEntry.getIndex() == id)
+            .findAny();
     }
 }

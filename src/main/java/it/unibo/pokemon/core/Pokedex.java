@@ -9,4 +9,5 @@ public interface Pokedex {
     Set<PokemonEntry> getAllPokemon();
     Optional<PokemonEntry> searchPokemonByName(String name);
     List<PokemonEntry> searchPokemonByType(PokemonType type);
+    Optional<PokemonEntry> searchPokemonById(int id);
 }

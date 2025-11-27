@@ -1,14 +1,15 @@
 package it.unibo.pokemon.core.impl;
 
 import it.unibo.pokemon.core.PokemonEntry;
-import it.unibo.pokemon.core.PokemonEntryFull;
 import it.unibo.pokemon.core.PokemonType;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-public class PokemonEntryImpl extends PokemonEntryBaseImpl implements PokemonEntryFull {
+public class PokemonEntryImpl implements PokemonEntry {
+    private final int index;
     private final String name;
     private final String description;
     private final double weight;
@@ -17,6 +18,8 @@ public class PokemonEntryImpl extends PokemonEntryBaseImpl implements PokemonEnt
     private final PokemonType secondaryType;
     private final PokemonEntry preEvolution;
     private final List<PokemonEntry> postEvolutions;
+    private boolean seen;
+    private final String imageUrl;
 
     public PokemonEntryImpl(
         final int index,
@@ -27,15 +30,17 @@ public class PokemonEntryImpl extends PokemonEntryBaseImpl implements PokemonEnt
         final PokemonType primaryType,
         final PokemonType secondaryType,
         final PokemonEntry preEvolution,
-        final List<PokemonEntry> postEvolutions
+        final List<PokemonEntry> postEvolutions,
+        final String imageUrl,
+        final boolean seen
     ) {
-        super(index);
-        if(postEvolutions.contains(this)) {
+        if(postEvolutions.stream().anyMatch(p -> p.equals(this))) {
             throw new IllegalArgumentException("the post evolution cannot contains myself");
         }
-        if(preEvolution == this) {
+        if(this.equals(preEvolution)) {
             throw new IllegalArgumentException("The pre evolution cannot be the same of this pokemon!");
         }
+        this.index = index;
         this.name = name;
         this.description = description;
         this.weight = weight;
@@ -48,6 +53,13 @@ public class PokemonEntryImpl extends PokemonEntryBaseImpl implements PokemonEnt
         }
         this.preEvolution = preEvolution;
         this.postEvolutions = Collections.unmodifiableList(postEvolutions);
+        this.imageUrl = imageUrl;
+        this.seen = seen;
+    }
+
+    @Override
+    public int getIndex() {
+        return this.index;
     }
 
     @Override
@@ -88,5 +100,31 @@ public class PokemonEntryImpl extends PokemonEntryBaseImpl implements PokemonEnt
     @Override
     public List<PokemonEntry> getPostEvolution() {
         return this.postEvolutions;
+    }
+
+    @Override
+    public boolean isSeen() {
+        return this.seen;
+    }
+
+    @Override
+    public void markAsSeen() {
+        this.seen = true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        PokemonEntryImpl that = (PokemonEntryImpl) o;
+        return index == that.index;
+    }
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(index);
+    }
+
+    @Override
+    public String getImageUrl() {
+        return this.imageUrl;
     }
 }
