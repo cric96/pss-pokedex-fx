@@ -5,6 +5,8 @@ import it.unibo.pokemon.controller.impl.PokedexControllerImpl;
 import it.unibo.pokemon.core.Pokedex;
 import it.unibo.pokemon.core.PokedexLoader;
 import it.unibo.pokemon.core.PokemonEntry;
+import it.unibo.pokemon.core.impl.PokedexImpl;
+import it.unibo.pokemon.view.MockPokemons;
 import it.unibo.pokemon.view.PokedexView;
 import it.unibo.pokemon.view.panel.PokemonDetailPanel;
 import it.unibo.pokemon.view.panel.PokemonListPanel;
@@ -26,8 +28,6 @@ public class PokedexViewImpl extends Application implements PokedexView {
 
     @Override
     public void start(final Stage primaryStage) {
-        // Load model
-        final Pokedex model = PokedexLoader.loadPokedex();
         // View preparation
         this.listPanel = new PokemonListPanelImpl();
         this.detailPanel = new PokemonDetailPanelImpl();
@@ -37,10 +37,11 @@ public class PokedexViewImpl extends Application implements PokedexView {
         primaryStage.setTitle("Pokedex");
         primaryStage.setScene(scene);
         // Create controller
-        final PokedexController controller = new PokedexControllerImpl(model, this);
+        this.showPokemons(MockPokemons.sample().stream().toList());
+        this.detailPanel.setPokemon(MockPokemons.sample().stream().filter(PokemonEntry::isSeen).findFirst().get());
         // Set up event handlers
-        listPanel.setOnPokemonSelected(pokemon -> controller.showPokemon(pokemon.getIndex()));
-        listPanel.setOnSearch(controller::searchPokemon);
+        // listPanel.setOnPokemonSelected(pokemon -> controller.showPokemon(pokemon.getIndex()));
+        // listPanel.setOnSearch(controller::searchPokemon);
         // Show stage
         primaryStage.show();
     }

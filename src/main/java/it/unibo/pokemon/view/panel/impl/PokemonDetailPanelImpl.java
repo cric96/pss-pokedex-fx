@@ -13,6 +13,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
+import java.io.InputStream;
+
 public class PokemonDetailPanelImpl implements PokemonDetailPanel {
 
     private final VBox root = new VBox(10);
@@ -73,14 +75,13 @@ public class PokemonDetailPanelImpl implements PokemonDetailPanel {
         
         heightWeightLabel.setText(String.format("Height: %.1fm  Weight: %.1fkg", pokemon.getHeight(), pokemon.getWeight()));
         descriptionLabel.setText(pokemon.getDescription());
-        
-        if (controller != null) {
-            final var imageStream = controller.loadPokemonImageStream(pokemon);
-            if (imageStream != null) {
-                final Image image = new Image(imageStream);
-                imageView.setImage(image);
-                imageView.setOpacity(1.0);
-            }
+        final String imageUrl = pokemon.getImageUrl();
+        System.out.println(imageUrl);
+        var imageStream =getClass().getResourceAsStream(imageUrl);
+        if (imageStream != null) {
+            final Image image = new Image(imageStream);
+            imageView.setImage(image);
+            imageView.setOpacity(1.0);
         }
     }
 
