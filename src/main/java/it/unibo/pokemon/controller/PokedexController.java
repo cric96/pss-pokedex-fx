@@ -15,7 +15,7 @@ public interface PokedexController {
      * Shows a pokemon.
      * @param index the index of the pokemon to show
      */
-    void showPokemon(int index);
+    void detailsForPokemon(int index);
 
     /**
      * Searches a pokemon by name.

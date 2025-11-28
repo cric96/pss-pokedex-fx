@@ -26,7 +26,7 @@ public class PokedexControllerImpl implements PokedexController {
     }
 
     @Override
-    public void showPokemon(final int index) {
+    public void detailsForPokemon(final int index) {
         currentPokemonIndex = index;
         model.searchPokemonById(index).ifPresentOrElse(
             entry -> {

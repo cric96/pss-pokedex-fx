@@ -39,7 +39,7 @@ public class PokedexViewImpl extends Application implements PokedexView {
         // Create controller
         final PokedexController controller = new PokedexControllerImpl(model, this);
         // Set up event handlers
-        listPanel.setOnPokemonSelected(pokemon -> controller.showPokemon(pokemon.getIndex()));
+        listPanel.setOnPokemonSelected(pokemon -> controller.detailsForPokemon(pokemon.getIndex()));
         listPanel.setOnSearch(controller::searchPokemon);
         // Show stage
         primaryStage.show();
@@ -51,7 +51,7 @@ public class PokedexViewImpl extends Application implements PokedexView {
         // Set controller on detail panel for image loading
         detailPanel.setController(controller);
         // Show first pokemon
-        this.controller.showPokemon(1);
+        this.controller.detailsForPokemon(1);
     }
 
     @Override
