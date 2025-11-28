@@ -18,7 +18,7 @@ public class PokedexControllerImpl implements PokedexController {
     }
 
     @Override
-    public void showPokemon(final int index) {
+    public void detailsFor(final int index) {
 
     }
 

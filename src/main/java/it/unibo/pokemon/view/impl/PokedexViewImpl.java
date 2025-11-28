@@ -1,11 +1,7 @@
 package it.unibo.pokemon.view.impl;
 
 import it.unibo.pokemon.controller.PokedexController;
-import it.unibo.pokemon.controller.impl.PokedexControllerImpl;
-import it.unibo.pokemon.core.Pokedex;
-import it.unibo.pokemon.core.PokedexLoader;
 import it.unibo.pokemon.core.PokemonEntry;
-import it.unibo.pokemon.core.impl.PokedexImpl;
 import it.unibo.pokemon.view.MockPokemons;
 import it.unibo.pokemon.view.PokedexView;
 import it.unibo.pokemon.view.panel.PokemonDetailPanel;
@@ -52,7 +48,7 @@ public class PokedexViewImpl extends Application implements PokedexView {
         // Set controller on detail panel for image loading
         detailPanel.setController(controller);
         // Show first pokemon
-        this.controller.showPokemon(1);
+        this.controller.detailsFor(1);
     }
 
     @Override
