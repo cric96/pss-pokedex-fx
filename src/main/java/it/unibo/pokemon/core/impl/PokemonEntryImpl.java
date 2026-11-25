@@ -3,12 +3,10 @@ package it.unibo.pokemon.core.impl;
 import it.unibo.pokemon.core.PokemonEntry;
 import it.unibo.pokemon.core.PokemonType;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public class PokemonEntryImpl implements PokemonEntry {
+public final class PokemonEntryImpl implements PokemonEntry {
     private final int index;
     private final String name;
     private final String description;
@@ -16,9 +14,7 @@ public class PokemonEntryImpl implements PokemonEntry {
     private final double height;
     private final PokemonType primaryType;
     private final PokemonType secondaryType;
-    private final PokemonEntry preEvolution;
-    private final List<PokemonEntry> postEvolutions;
-    private boolean seen;
+    private final Integer preEvolutionIndex;
     private final String imageUrl;
 
     public PokemonEntryImpl(
@@ -29,32 +25,21 @@ public class PokemonEntryImpl implements PokemonEntry {
         final double height,
         final PokemonType primaryType,
         final PokemonType secondaryType,
-        final PokemonEntry preEvolution,
-        final List<PokemonEntry> postEvolutions,
-        final String imageUrl,
-        final boolean seen
+        final Integer preEvolutionIndex,
+        final String imageUrl
     ) {
-        if(postEvolutions.stream().anyMatch(p -> p.equals(this))) {
-            throw new IllegalArgumentException("the post evolution cannot contains myself");
-        }
-        if(this.equals(preEvolution)) {
-            throw new IllegalArgumentException("The pre evolution cannot be the same of this pokemon!");
+        if (preEvolutionIndex != null && preEvolutionIndex == index) {
+            throw new IllegalArgumentException("A pokemon cannot evolve from itself!");
         }
         this.index = index;
-        this.name = name;
-        this.description = description;
+        this.name = Objects.requireNonNull(name);
+        this.description = Objects.requireNonNull(description);
         this.weight = weight;
         this.height = height;
-        this.primaryType = primaryType;
-        if(primaryType != secondaryType) {
-            this.secondaryType = secondaryType;
-        } else {
-            this.secondaryType = null;
-        }
-        this.preEvolution = preEvolution;
-        this.postEvolutions = Collections.unmodifiableList(postEvolutions);
+        this.primaryType = Objects.requireNonNull(primaryType);
+        this.secondaryType = primaryType.equals(secondaryType) ? null : secondaryType;
+        this.preEvolutionIndex = preEvolutionIndex;
         this.imageUrl = imageUrl;
-        this.seen = seen;
     }
 
     @Override
@@ -93,38 +78,31 @@ public class PokemonEntryImpl implements PokemonEntry {
     }
 
     @Override
-    public Optional<PokemonEntry> getPreEvolution() {
-        return Optional.ofNullable(this.preEvolution);
+    public Optional<Integer> getPreEvolutionIndex() {
+        return Optional.ofNullable(this.preEvolutionIndex);
     }
 
     @Override
-    public List<PokemonEntry> getPostEvolution() {
-        return this.postEvolutions;
+    public String getImageUrl() {
+        return this.imageUrl;
     }
 
     @Override
-    public boolean isSeen() {
-        return this.seen;
-    }
-
-    @Override
-    public void markAsSeen() {
-        this.seen = true;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        PokemonEntryImpl that = (PokemonEntryImpl) o;
+    public boolean equals(final Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        final PokemonEntryImpl that = (PokemonEntryImpl) o;
         return index == that.index;
     }
+
     @Override
     public int hashCode() {
         return Objects.hashCode(index);
     }
 
     @Override
-    public String getImageUrl() {
-        return this.imageUrl;
+    public String toString() {
+        return "#" + index + " " + name;
     }
 }

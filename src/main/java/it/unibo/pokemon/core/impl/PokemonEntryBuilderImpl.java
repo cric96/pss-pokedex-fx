@@ -4,25 +4,16 @@ import it.unibo.pokemon.core.PokemonEntry;
 import it.unibo.pokemon.core.PokemonEntryBuilder;
 import it.unibo.pokemon.core.PokemonType;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class PokemonEntryBuilderImpl implements PokemonEntryBuilder {
     private int index;
     private String name;
-    private String description;
+    private String description = "";
     private PokemonType primaryType;
     private PokemonType secondaryType;
-    private PokemonEntry preEvolution;
-    private final List<PokemonEntry> postEvolution;
+    private Integer preEvolutionIndex;
     private double weight;
     private double height;
-    private boolean seen;
     private String imageUrl;
-
-    public PokemonEntryBuilderImpl() {
-        this.postEvolution = new ArrayList<>();
-    }
 
     @Override
     public PokemonEntryBuilder withIndex(final int index) {
@@ -55,14 +46,8 @@ public class PokemonEntryBuilderImpl implements PokemonEntryBuilder {
     }
 
     @Override
-    public PokemonEntryBuilder withPreEvolution(final PokemonEntry pokemonEntry) {
-        this.preEvolution = pokemonEntry;
-        return this;
-    }
-
-    @Override
-    public PokemonEntryBuilder withPostEvolution(final PokemonEntry pokemonEntry) {
-        this.postEvolution.add(pokemonEntry);
+    public PokemonEntryBuilder withPreEvolution(final int preEvolutionIndex) {
+        this.preEvolutionIndex = preEvolutionIndex;
         return this;
     }
 
@@ -79,12 +64,6 @@ public class PokemonEntryBuilderImpl implements PokemonEntryBuilder {
     }
 
     @Override
-    public PokemonEntryBuilder isSeen() {
-        this.seen = true;
-        return this;
-    }
-
-    @Override
     public PokemonEntryBuilder withImageUrl(final String imageUrl) {
         this.imageUrl = imageUrl;
         return this;
@@ -92,9 +71,8 @@ public class PokemonEntryBuilderImpl implements PokemonEntryBuilder {
 
     @Override
     public PokemonEntry build() {
-        var entry = new PokemonEntryImpl(
-            index, name, description, weight, height, primaryType, secondaryType, preEvolution, postEvolution, imageUrl, seen
+        return new PokemonEntryImpl(
+            index, name, description, weight, height, primaryType, secondaryType, preEvolutionIndex, imageUrl
         );
-        return entry;
     }
 }

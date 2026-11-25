@@ -8,48 +8,33 @@ public class PokemonEntryImplTest {
 
     @Test
     public void pokemonEntryTypeShouldNeverBeTheSame() {
-        PokemonEntry pokemon = new PokemonEntryBuilderImpl()
-            .withIndex(0)
+        final PokemonEntry pokemon = new PokemonEntryBuilderImpl()
+            .withIndex(25)
             .withName("pikachu")
-            .withDescription("")
-            .withWeight(1.0)
-            .withHeight(2.0)
-            .withPrimaryType(PokemonTypeEnum.FIRE)
-            .withSecondaryType(PokemonTypeEnum.FIRE)
+            .withPrimaryType(PokemonTypeEnum.ELECTRIC)
+            .withSecondaryType(PokemonTypeEnum.ELECTRIC)
             .build();
         Assertions.assertTrue(pokemon.getSecondaryType().isEmpty());
     }
 
     @Test
-    public void pokemonEntryTypeShouldNeverHavePrevolutionOfItself() {
-        var pokemonBuilder = new PokemonEntryBuilderImpl()
-            .withIndex(0)
+    public void pokemonEntryShouldNeverEvolveFromItself() {
+        final var pokemonBuilder = new PokemonEntryBuilderImpl()
+            .withIndex(25)
             .withName("pikachu")
-            .withDescription("")
-            .withWeight(1.0)
-            .withHeight(2.0)
-            .withPrimaryType(PokemonTypeEnum.FIRE);
-        var pikachu = pokemonBuilder.build();
-        Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () ->  pokemonBuilder.withPreEvolution(pikachu).build()
-        );
+            .withPrimaryType(PokemonTypeEnum.ELECTRIC)
+            .withPreEvolution(25);
+        Assertions.assertThrows(IllegalArgumentException.class, pokemonBuilder::build);
     }
 
     @Test
-    public void pokemonEntryTypeShouldNeverHavePostevolutionOfItself() {
-        var pokemonBuilder = new PokemonEntryBuilderImpl()
-            .withIndex(0)
-            .withName("pikachu")
-            .withDescription("")
-            .withWeight(1.0)
-            .withHeight(2.0)
-            .withPrimaryType(PokemonTypeEnum.FIRE);
-        var pikachu = pokemonBuilder.build();
-        Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () ->  pokemonBuilder.withPostEvolution(pikachu).build()
-        );
+    public void pokemonEntryShouldExposeItsPreEvolution() {
+        final PokemonEntry raichu = new PokemonEntryBuilderImpl()
+            .withIndex(26)
+            .withName("raichu")
+            .withPrimaryType(PokemonTypeEnum.ELECTRIC)
+            .withPreEvolution(25)
+            .build();
+        Assertions.assertEquals(25, raichu.getPreEvolutionIndex().orElseThrow());
     }
-
 }
