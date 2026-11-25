@@ -1,6 +1,9 @@
 # Analisi
 
-Questo documento descrive **cosa** il sistema deve fare, non **come** lo fa.
+Ricordatevi: questo parte del progetto si deve focalizzare su **cosa** il sistema **deve** fare,
+non sul **come** lo farà.
+NON devono emergere scelta architetturali (es. MVC), di implementazione (es. view in JavaFX). 
+Dove ragionare al livello del Dominio
 Le scelte di architettura e di design vengono dopo e devono poter essere giustificate a partire da qui.
 
 ## 1. Requisiti
@@ -17,7 +20,7 @@ Le scelte di architettura e di design vengono dopo e devono poter essere giustif
 | RF6 | L'utente può **registrare la cattura** del Pokémon selezionato; un Pokémon catturato risulta anche avvistato. |
 | RF7 | L'utente può **cercare** un Pokémon per nome; se esiste, viene selezionato e ne viene mostrata la scheda, altrimenti il sistema segnala che non è stato trovato. |
 | RF8 | Svuotando la ricerca, il sistema torna a mostrare l'elenco completo. |
-| RF9 | All'avvio, il sistema carica da un file JSON il catalogo delle specie e delle loro evoluzioni, parte con i progressi vuoti e mostra la scheda del primo Pokémon. |
+| RF9 | All'avvio, il sistema carica da un file il catalogo delle specie e delle loro evoluzioni, parte con i progressi vuoti e mostra la scheda del primo Pokémon. |
 
 #### Requisiti opzionali
 
@@ -32,11 +35,11 @@ Le scelte di architettura e di design vengono dopo e devono poter essere giustif
 
 | ID   | Requisito |
 |------|-----------|
-| RNF1 | L'interfaccia è un'applicazione desktop realizzata con JavaFX. |
-| RNF2 | Il modello del dominio deve essere **indipendente** dall'interfaccia grafica e dal formato di memorizzazione: deve poter essere testato senza avviare JavaFX e senza leggere file. |
-| RNF3 | Aggiungere una nuova specie, o una nuova evoluzione, deve richiedere solo di modificare il file dei dati (e aggiungere l'immagine), non il codice. |
-| RNF4 | Un file dei dati che viola i vincoli del dominio viene rifiutato all'avvio, con un messaggio che indica il problema. |
-| RNF5 | La logica del dominio è coperta da test automatici (JUnit). |
+| RNF1 | **Portabilità**: il sistema è un'applicazione desktop che funziona su Windows, macOS e Linux, e non richiede una connessione di rete. |
+| RNF2 | **Estendibilità dei dati**: aggiungere una specie o un'evoluzione richiede solo di modificare i dati (e aggiungere l'immagine), non il programma. |
+| RNF3 | **Robustezza**: dati che violano i vincoli del dominio vengono rifiutati all'avvio, con un messaggio che indica la voce e il vincolo violato. Il sistema non mostra mai dati incoerenti. |
+| RNF4 | **Prestazioni**: anche con un catalogo grande quanto il Pokédex completo (circa 1000 specie), l'avvio richiede pochi secondi, e la selezione e la ricerca rispondono in modo percepito come immediato (meno di 0,1 secondi). |
+| RNF6 | **Usabilità**: tutte le funzioni sono disponibili da un'unica finestra, senza menu annidati, e ogni azione ha un riscontro immediato: la scheda si aggiorna, oppure compare un messaggio che spiega cosa non è andato. |
 
 ## 2. Analisi e modello del dominio
 
@@ -44,31 +47,34 @@ Le scelte di architettura e di design vengono dopo e devono poter essere giustif
 
 | Termine | Significato |
 |---------|-------------|
-| **Pokédex** (catalogo) | L'insieme di tutte le specie conosciute e delle evoluzioni tra di esse. È **fisso**: non cambia durante l'uso. |
-| **Specie / Voce** (*Pokemon entry*) | La descrizione di un tipo di Pokémon: numero, nome, descrizione, tipi, misure, immagine. |
-| **Numero** (*index*) | Identifica univocamente una specie nel Pokédex. |
-| **Tipo** | Categoria elementale (Fuoco, Acqua, Erba, …). L'insieme dei tipi è fissato. Ogni specie ha un tipo primario e, opzionalmente, un tipo secondario. |
-| **Evoluzione** | Relazione tra due specie, *A si evolve in B*, che avviene a una certa condizione. |
-| **Condizione di evoluzione** | Cosa fa evolvere un Pokémon: raggiungere un **livello** (da 1 a 100), usare uno **strumento**, oppure uno **scambio**. Le condizioni possibili sono solo queste. |
-| **Catena evolutiva** | Sequenza di evoluzioni consecutive (Charmander → Charmeleon → Charizard). |
-| **Progressi dell'allenatore** | Per ogni specie del Pokédex, lo stato raggiunto dall'allenatore. Cambiano nel tempo e sono diversi per ogni allenatore. |
-| **Stato di incontro** | *Non avvistato*, *avvistato* o *catturato*. |
+| **Pokédex** (catalogo) — *Pokedex* | L'insieme di tutte le specie conosciute e delle evoluzioni tra di esse. È **fisso**: non cambia durante l'uso. |
+| **Specie / Voce** — *PokemonEntry* | La descrizione di un tipo di Pokémon: numero, nome, descrizione, tipi, misure, immagine. |
+| **Numero** — *index* | Identifica univocamente una specie nel Pokédex. |
+| **Tipo** — *PokemonType* | Categoria elementale (Fuoco, Acqua, Erba, …). L'insieme dei tipi è fissato. Ogni specie ha un tipo primario e, opzionalmente, un tipo secondario. |
+| **Evoluzione** — *Evolution* | Relazione tra due specie, *A si evolve in B*, che avviene a una certa condizione. |
+| **Condizione di evoluzione** — *EvolutionCondition* | Cosa fa evolvere un Pokémon: raggiungere un **livello** (*LevelUp*, da 1 a 100), usare uno **strumento** (*UseItem*), oppure uno **scambio** (*Trade*). Le condizioni possibili sono solo queste. |
+| **Catena evolutiva** — *evolution chain* | Sequenza di evoluzioni consecutive (Charmander → Charmeleon → Charizard). |
+| **Progressi dell'allenatore** — *TrainerProgress* | Per ogni specie del Pokédex, lo stato raggiunto dall'allenatore. Cambiano nel tempo e sono diversi per ogni allenatore. |
+| **Stato di incontro** — *EncounterStatus* | *Non avvistato* (UNSEEN), *avvistato* (SEEN) o *catturato* (CAUGHT). |
 
 ### 2.2 Modello del dominio
 
 ```mermaid
 classDiagram
     class Pokedex {
-        cerca per nome / tipo / numero
-        evoluzioni di una specie
+        searchByName(name)
+        searchByType(type)
+        searchByIndex(index)
+        preEvolutionOf(entry)
+        postEvolutionsOf(entry)
     }
     class PokemonEntry {
-        numero
-        nome
-        descrizione
-        altezza
-        peso
-        immagine
+        index
+        name
+        description
+        height
+        weight
+        image
     }
     class PokemonType {
         <<enumeration>>
@@ -83,17 +89,18 @@ classDiagram
         <<abstract>>
     }
     class LevelUp {
-        livello
+        level
     }
     class UseItem {
-        strumento
+        item
     }
     class Trade
     class TrainerProgress {
-        avvistati
-        catturati
-        registra avvistamento
-        registra cattura
+        seenCount
+        caughtCount
+        statusOf(entry)
+        markAsSeen(entry)
+        markAsCaught(entry)
     }
     class EncounterStatus {
         <<enumeration>>
@@ -102,81 +109,41 @@ classDiagram
         CAUGHT
     }
 
-    Pokedex "1" o-- "*" PokemonEntry : cataloga
-    Pokedex "1" o-- "*" Evolution : contiene
-    PokemonEntry --> "1" PokemonType : tipo primario
-    PokemonEntry --> "0..1" PokemonType : tipo secondario
-    Evolution --> "1" PokemonEntry : da
-    Evolution --> "1" PokemonEntry : a
-    Evolution --> "1" EvolutionCondition : quando
+    Pokedex "1" o-- "*" PokemonEntry : catalogues
+    Pokedex "1" o-- "*" Evolution : contains
+    PokemonEntry --> "1" PokemonType : primary type
+    PokemonEntry --> "0..1" PokemonType : secondary type
+    Evolution --> "1" PokemonEntry : from
+    Evolution --> "1" PokemonEntry : to
+    Evolution --> "1" EvolutionCondition : when
     EvolutionCondition <|-- LevelUp
     EvolutionCondition <|-- UseItem
     EvolutionCondition <|-- Trade
-    TrainerProgress --> "1" Pokedex : riferito a
-    TrainerProgress ..> EncounterStatus : uno per specie
+    TrainerProgress --> "1" Pokedex : refers to
+    TrainerProgress ..> EncounterStatus : one per species
 ```
 
-Il **Pokédex** è il catalogo: contiene le specie e le evoluzioni tra di esse.
-Ogni **specie** ha uno o due **tipi**.
-Un'**evoluzione** collega due specie e ha una **condizione**, che può essere di tre tipi diversi.
-I **progressi dell'allenatore** sono un'entità separata, riferita a un Pokédex: per ogni specie registrano lo
-**stato di incontro**.
+Il **Pokédex** (*Pokedex*) è il catalogo di tutte le specie conosciute e delle evoluzioni tra di esse. Permette di
+cercare una specie per nome, per tipo o per numero, e di sapere da quale specie si evolve una specie e in quali si
+evolve.
 
-### 2.3 Vincoli del dominio
+Ogni **specie** (*PokemonEntry*) è identificata dal suo **numero** (*index*): nel Pokédex non ci sono due specie con lo
+stesso numero, né con lo stesso nome (V1). Una specie ha un tipo primario e, opzionalmente, un tipo secondario, che è
+sempre diverso dal primario (V2).
 
-Sono le regole che devono valere sempre; in progettazione andrà deciso chi le garantisce, e ciascuna avrà un test.
+Un'**evoluzione** (*Evolution*) collega una specie di partenza a una specie di arrivo, che sono diverse (V3) e
+appartengono entrambe al Pokédex (V4). L'evoluzione avviene a una **condizione** (*EvolutionCondition*), di uno fra
+tre tipi: il raggiungimento di un livello, compreso tra 1 e 100 (*LevelUp*); l'uso di uno strumento, che ha sempre un
+nome (*UseItem*) (V7); oppure uno scambio (*Trade*).
+Considerate nel loro insieme, le evoluzioni rispettano tre regole:
 
-**Specie**
+- una specie si evolve da **al più una** specie, ma può evolversi in più specie (V5);
+- seguendo una catena non si torna mai a una specie già incontrata: le evoluzioni non formano **cicli** (V6);
+- lungo una catena, se due evoluzioni consecutive avvengono per livello, la seconda richiede un livello **maggiore**
+  della prima, come in Charmander → Charmeleon al 16 e Charmeleon → Charizard al 36 (V8).
 
-- V1. Il numero di una specie è unico nel Pokédex, e lo stesso vale per il nome.
-- V2. Il tipo secondario, se presente, è diverso dal primario.
-
-**Evoluzioni**
-
-- V3. Una specie non può evolversi in sé stessa.
-- V4. Entrambe le specie di un'evoluzione appartengono al Pokédex.
-- V5. Una specie si evolve da **al più una** specie (ma può evolversi in più specie).
-- V6. Le evoluzioni non formano **cicli**: seguendo una catena non si torna mai a una specie già incontrata.
-- V7. Il livello di un'evoluzione è compreso tra 1 e 100; uno strumento ha sempre un nome.
-- V8. Lungo una catena, se due evoluzioni consecutive avvengono per livello, la seconda richiede un livello
-  **maggiore** della prima (Charmander → Charmeleon al 16, Charmeleon → Charizard al 36).
-
-**Progressi**
-
-- V9. Si possono registrare progressi solo per specie del Pokédex a cui i progressi si riferiscono.
-- V10. Lo stato di incontro **avanza soltanto**: non avvistato → avvistato → catturato. Catturare un Pokémon implica
-  averlo avvistato; registrare l'avvistamento di un Pokémon già catturato non cambia nulla.
-- V11. I progressi di allenatori diversi sono indipendenti.
-
-### 2.4 Elementi critici
-
-Alcuni aspetti del dominio sembrano banali ma influenzano molto la progettazione.
-
-**Catalogo e progressi sono due cose diverse.**
-Mettere un flag "avvistato" nella specie, o nel Pokédex, sembra naturale, ma mescola due concetti:
-*com'è fatto Bulbasaur* (uguale per tutti, fisso) e *a che punto è un allenatore con Bulbasaur* (dipende
-dall'allenatore e cambia nel tempo).
-Separarli lascia il catalogo immutabile, permette più allenatori sullo stesso catalogo (V11) e isola in un solo posto
-le regole sullo stato di incontro (V10).
-
-**L'evoluzione è un'entità, non un attributo.**
-Un'evoluzione ha dati propri (la condizione), quindi non può essere un semplice riferimento "evolve in" dentro la specie.
-Le evoluzioni formano un grafo in cui le specie sono i nodi e le evoluzioni gli archi.
-Se fossero le specie a conoscere le proprie evoluzioni, in entrambi i versi, si avrebbero riferimenti circolari tra
-oggetti, e due fonti della stessa informazione che possono divergere.
-Se invece le specie non sanno nulla delle evoluzioni, il grafo si costruisce in modo semplice: prima i nodi, poi gli
-archi.
-
-**Alcuni vincoli riguardano un solo oggetto, altri l'insieme.**
-V2, V3 e V7 si verificano guardando una sola specie o una sola evoluzione.
-V1, V4, V5, V6 e V8, invece, si possono verificare solo conoscendo **tutte** le specie e **tutte** le evoluzioni:
-la responsabilità spetta a chi ha questa visione d'insieme, cioè al Pokédex.
-
-**Le condizioni di evoluzione sono un insieme chiuso.**
-Livello, strumento e scambio: le varianti sono note a priori e ognuna ha dati diversi (un numero, un nome, nulla).
-Chi mostra o elabora una condizione deve gestirle tutte, e conviene che sia il compilatore ad accorgersi se ne manca una.
-
-**Separare il dominio dalla presentazione.**
-Il testo `???` o un'immagine nascosta riguardano il *modo di mostrare* un Pokémon, non il Pokémon.
-Il dominio espone i dati e lo stato di incontro; decidere cosa nascondere e come è compito della presentazione
-(RNF2).
+I **progressi dell'allenatore** (*TrainerProgress*) sono un'entità separata dal catalogo e si riferiscono a un
+Pokédex: registrano lo **stato di incontro** (*EncounterStatus*) di ciascuna delle sue specie, e solo di quelle (V9).
+Ogni allenatore ha i propri progressi, indipendenti da quelli degli altri (V11).
+Lo stato di incontro **avanza soltanto**, da *non avvistato* ad *avvistato* a *catturato*: catturare un Pokémon
+implica averlo avvistato, e registrare l'avvistamento di un Pokémon già catturato non cambia nulla (V10).

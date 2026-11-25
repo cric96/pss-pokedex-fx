@@ -3,10 +3,10 @@ package it.unibo.pokemon.core;
 import java.util.Objects;
 
 /**
- * The condition under which a pokemon evolves. The set of conditions is closed (sealed):
- * a switch over them is checked for exhaustiveness by the compiler.
+ * The condition under which a pokemon evolves: reaching a level, using an item, or being traded.
+ * Each kind of condition is a record with its own data and constraints.
  */
-public sealed interface EvolutionCondition {
+public interface EvolutionCondition {
 
     int MIN_LEVEL = 1;
     int MAX_LEVEL = 100;

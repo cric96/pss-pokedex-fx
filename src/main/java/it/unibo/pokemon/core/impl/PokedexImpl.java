@@ -79,9 +79,9 @@ public final class PokedexImpl implements Pokedex {
     private void checkIncreasingLevels(final Evolution evolution) {
         final Optional<Evolution> previous = getPreEvolution(evolution.from());
         if (previous.isPresent()
-            && previous.get().condition() instanceof EvolutionCondition.LevelUp(final int previousLevel)
-            && evolution.condition() instanceof EvolutionCondition.LevelUp(final int level)
-            && level <= previousLevel) {
+            && previous.get().condition() instanceof EvolutionCondition.LevelUp previousLevelUp
+            && evolution.condition() instanceof EvolutionCondition.LevelUp levelUp
+            && levelUp.level() <= previousLevelUp.level()) {
             throw new IllegalArgumentException(evolution + " requires a level not greater than " + previous.get());
         }
     }

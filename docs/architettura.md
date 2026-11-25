@@ -6,68 +6,97 @@ comunicano**. Non entra nel dettaglio delle classi: quello è compito del [desig
 ## 1. Stile architetturale: MVC
 
 Il sistema segue il pattern **Model-View-Controller**.
-Il motivo principale è RNF2: il dominio deve essere testabile senza interfaccia grafica, quindi non deve dipendere da
-essa. Il secondo è che la stessa logica (cosa succede quando l'utente cerca, seleziona o registra una cattura) deve
-poter essere verificata senza cliccare: serve una parte che la contenga e che non dipenda da JavaFX.
+Il motivo principale è tenere le regole del dominio **indipendenti dall'interfaccia**. L'interfaccia è la parte che
+cambia più spesso, e deve poter essere sostituita (per esempio con una testuale) senza toccare il dominio.
+Il dominio, inoltre, deve poter essere verificato con test automatici senza avviare l'interfaccia.
+Lo stesso vale per la reazione alle azioni dell'utente (cosa succede quando cerca, seleziona o registra una cattura):
+deve poter essere verificata senza cliccare, quindi serve una parte che la contenga e che non dipenda dalla tecnologia
+dell'interfaccia.
+
+## 2. Componenti
 
 ```mermaid
-flowchart LR
-    User([Utente])
-    subgraph View
-        V[PokedexView]
-    end
-    subgraph Controller
-        C[PokedexController]
-    end
-    subgraph Model
-        P[Pokedex]
-        T[TrainerProgress]
-    end
-    L[PokedexLoader]
-    JSON[(pokedex.json)]
+classDiagram
+    direction LR
+    class PokedexView {
+        <<interface>>
+        +setController(PokedexController controller)
+        +showPokemons(List~DisplayedPokemon~ pokemons)
+        +showPokemon(DisplayedPokemon pokemon)
+        +showError(String message)
+    }
+    class PokedexController {
+        <<interface>>
+        +start()
+        +detailsForPokemon(int index)
+        +searchPokemon(String name)
+        +markAsSeen(int index)
+        +markAsCaught(int index)
+    }
+    class DisplayedPokemon {
+        <<record>>
+        +entry() PokemonEntry
+        +status() EncounterStatus
+    }
+    class Pokedex {
+        <<interface>>
+        +getAllPokemon() Set~PokemonEntry~
+        +searchPokemonById(int index) Optional~PokemonEntry~
+        +searchPokemonByName(String name) Optional~PokemonEntry~
+    }
+    class TrainerProgress {
+        <<interface>>
+        +getStatus(PokemonEntry entry) EncounterStatus
+        +markAsSeen(PokemonEntry entry)
+        +markAsCaught(PokemonEntry entry)
+    }
+    class PokedexLoader {
+        +loadPokedex()$ Pokedex
+    }
 
-    User -- azioni --> V
-    V -- inoltra le azioni --> C
-    C -- "cosa mostrare" --> V
-    C -- interroga --> P
-    C -- interroga / aggiorna --> T
-    T --> P
-    L -- legge --> JSON
-    L -- costruisce --> P
+    PokedexView ..> PokedexController : forwards user actions
+    PokedexController ..> PokedexView : tells what to show
+    PokedexController ..> DisplayedPokemon : creates
+    PokedexView ..> DisplayedPokemon : shows
+    PokedexController --> Pokedex : queries
+    PokedexController --> TrainerProgress : queries / updates
+    TrainerProgress --> Pokedex : refers to
+    PokedexLoader ..> Pokedex : creates
 ```
 
-| Parte | Responsabilità | Non deve |
-|-------|----------------|----------|
-| **Model** (`Pokedex`, `TrainerProgress`) | Rappresentare il dominio e garantirne i vincoli (V1–V11 dell'analisi). | Conoscere view, controller, JavaFX o il formato JSON. |
-| **Caricamento** (`PokedexLoader`) | Costruire il Pokédex a partire dal file dei dati, rifiutando dati non validi (RNF4). | Contenere regole del dominio: i vincoli li verifica il model. |
-| **View** (`PokedexView`) | Mostrare ciò che le viene chiesto (elenco, scheda, errori) e inoltrare al controller le azioni dell'utente. Decide *come* nascondere un Pokémon non avvistato. | Interrogare o modificare il model; decidere *cosa* mostrare. |
-| **Controller** (`PokedexController`) | Reagire alle azioni dell'utente: interrogare o aggiornare il model e dire alla view cosa mostrare. | Conoscere JavaFX. |
+Lo schema mostra solo i metodi con cui le parti comunicano. Le altre operazioni (per esempio le evoluzioni nel
+`Pokedex`) sono descritte nel [design](design.md).
 
-## 2. Dipendenze
+Il **model** è formato da due entità. `Pokedex` è il catalogo delle specie e delle evoluzioni, mentre
+`TrainerProgress` registra i progressi dell'allenatore. Insieme garantiscono i vincoli del dominio (V1–V11
+dell'analisi). Il model non conosce né la view né il controller: sono gli altri a usarlo.
+
+Il `Pokedex` viene costruito dal `PokedexLoader` a partire dal file dei dati. Il loader si limita a tradurre i dati
+nelle entità del dominio; se i dati violano un vincolo, è il `Pokedex` stesso ad accorgersene, e il loader rifiuta il
+file (RNF3).
+
+La **view**, `PokedexView`, ha due ruoli: mostrare ciò che le viene chiesto (l'elenco, la scheda di un Pokémon, un
+errore) e inoltrare al controller le azioni dell'utente. Ogni volta che l'utente seleziona, cerca o registra qualcosa,
+la view chiama il metodo corrispondente del `PokedexController`. Decide *come* nascondere un Pokémon non avvistato, ma
+non *se* nasconderlo: questa informazione le arriva dal controller.
+
+Il **controller**, `PokedexController`, reagisce alle azioni dell'utente. Interroga il `Pokedex`, interroga o aggiorna
+il `TrainerProgress`, e infine decide cosa mostrare e lo comunica alla `PokedexView`.
+
+Ciò che il controller passa alla view è un `DisplayedPokemon`: una specie (`PokemonEntry`, immutabile) insieme al suo
+stato di incontro (`EncounterStatus`). Così la view ha tutto ciò che le serve, senza bisogno di interrogare il model.
+
+## 3. Dipendenze
 
 Le dipendenze vanno in un solo verso: **view → controller → model**.
-Il controller conosce la view solo tramite la sua interfaccia, e il model non conosce nessuno dei due.
+Il controller conosce la view solo tramite l'interfaccia `PokedexView`, e il model non conosce nessuno dei due.
 
-- Il **model** non dipende da nulla: si può compilare e testare da solo (RNF2, RNF5).
-- Il **controller** dipende dal model e dall'*interfaccia* della view. Nei test, la view può essere sostituita da una
+- Il **model** non dipende da nulla: si può compilare e testare da solo.
+- Il **controller** dipende dal model e dall'interfaccia `PokedexView`. Nei test, la view può essere sostituita da una
   view finta che registra cosa le viene chiesto di mostrare.
-- La **view** dipende dall'*interfaccia* del controller. Riceve i dati da mostrare già pronti: le specie (immutabili) e
-  il loro stato di incontro.
+- La **view** dipende dall'interfaccia `PokedexController`, e riceve i dati da mostrare già pronti.
 
-### Composition root
-
-C'è un solo punto del programma che conosce le classi concrete di tutte le parti: la **composition root**
-(`PokedexApp`). All'avvio:
-
-1. carica il Pokédex con il `PokedexLoader`;
-2. crea i progressi dell'allenatore, vuoti (RF9);
-3. crea la view e il controller e li collega;
-4. avvia il controller, che mostra l'elenco e il primo Pokémon;
-5. rende visibile la finestra.
-
-Nessuna parte crea da sé i propri collaboratori: la view non crea il controller e il controller non carica il Pokédex.
-
-## 3. Interazioni
+## 4. Interazioni
 
 Ogni requisito funzionale si traduce in un'interazione tra le parti. Le principali:
 
@@ -76,8 +105,8 @@ Ogni requisito funzionale si traduce in un'interazione tra le parti. Le principa
 ```mermaid
 sequenceDiagram
     actor U as Utente
-    participant V as View
-    participant C as Controller
+    participant V as PokedexView
+    participant C as PokedexController
     participant P as Pokedex
     participant T as TrainerProgress
     U->>V: seleziona #004 nell'elenco
@@ -86,7 +115,7 @@ sequenceDiagram
     P-->>C: Charmander
     C->>T: getStatus(Charmander)
     T-->>C: UNSEEN
-    C->>V: showPokemon(Charmander, UNSEEN)
+    C->>V: showPokemon(DisplayedPokemon(Charmander, UNSEEN))
     Note over V: mostra solo il numero, il resto è ???
 ```
 
@@ -95,39 +124,45 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor U as Utente
-    participant V as View
-    participant C as Controller
+    participant V as PokedexView
+    participant C as PokedexController
+    participant P as Pokedex
     participant T as TrainerProgress
-    U->>V: preme "Cattura" sulla scheda
+    U->>V: preme "Cattura" sulla scheda di #004
     V->>C: markAsCaught(4)
+    C->>P: searchPokemonById(4)
+    P-->>C: Charmander
     C->>T: markAsCaught(Charmander)
     Note over T: UNSEEN → CAUGHT (V10)
     C->>V: showPokemons(elenco aggiornato)
-    C->>V: showPokemon(Charmander, CAUGHT)
+    C->>V: showPokemon(DisplayedPokemon(Charmander, CAUGHT))
 ```
 
 ### Ricerca per nome (RF7, RF8)
 
-La view inoltra il testo cercato al controller. Se il testo è vuoto, il controller mostra l'elenco completo.
-Altrimenti cerca nel Pokédex: se trova il Pokémon lo seleziona come nella selezione, altrimenti chiede alla view di
-mostrare un errore.
+La `PokedexView` inoltra il testo cercato con `searchPokemon(name)`. Se il testo è vuoto, il controller mostra
+l'elenco completo con `showPokemons`. Altrimenti lo cerca con `searchPokemonByName`: se trova il Pokémon lo mostra
+come nella selezione, altrimenti chiama `showError`.
 
-## 4. Regole
+## 5. Sostituire la view, aggiungere funzionalità
 
-1. **Il model non dipende da nulla.** Niente JavaFX, niente JSON, niente controller.
+**Sostituire la view.** Per passare da un'interfaccia grafica a una testuale, o a un'altra libreria grafica, basta
+una nuova implementazione di `PokedexView` e una riga in `PokedexApp`, dove le parti vengono create. `PokedexController` e il model non
+cambiano: il controller conosce solo l'interfaccia, e il model non conosce nessuno dei due.
+
+**Aggiungere una funzionalità.** Un requisito opzionale come il filtro per tipo (RFO1) richiede un'operazione del
+`PokedexController` (`searchPokemonByType`, già presente), che usa una ricerca già offerta dal `Pokedex`, e un nuovo
+controllo nella view, che la chiama.
+La view continua a mostrare un elenco di `DisplayedPokemon`, e il model non cambia.
+Una funzionalità che riguarda il dominio, come la catena evolutiva (RFO2), richiede invece di estendere anche ciò che
+il controller passa alla view.
+
+## 6. Regole
+
+1. **Il model non dipende da nulla.** Niente interfaccia grafica, niente formato dei dati, niente controller.
 2. **La view è passiva.** Non interroga il model: riceve tutto ciò che deve mostrare.
-3. **Il controller non conosce JavaFX.** Si testa con una view finta.
+3. **Il controller non dipende dalla tecnologia dell'interfaccia.** Si testa con una view finta.
 4. **I costruttori non hanno effetti collaterali.** Costruire il controller non aggiorna la view: l'interazione
-   comincia con un avvio esplicito.
-5. **Un solo punto crea e collega le parti**: la composition root.
+   comincia con `start()`.
+5. **Un solo punto crea e collega le parti**: `PokedexApp`.
 6. **Le parti comunicano tramite interfacce**, mai tramite le classi concrete.
-
-## 5. Organizzazione in package
-
-| Package | Contenuto |
-|---------|-----------|
-| `it.unibo.pokemon` | `Launcher` e composition root (`PokedexApp`) |
-| `it.unibo.pokemon.core` | interfacce e tipi del dominio, `PokedexLoader` |
-| `it.unibo.pokemon.core.impl` | implementazioni del dominio |
-| `it.unibo.pokemon.controller` (`.impl`) | interfaccia del controller e sua implementazione |
-| `it.unibo.pokemon.view` (`.impl`, `.panel`) | interfaccia della view, implementazione JavaFX e suoi pannelli |

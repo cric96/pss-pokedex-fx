@@ -16,16 +16,6 @@ public interface Pokedex {
     Optional<PokemonEntry> searchPokemonByName(String name);
     List<PokemonEntry> searchPokemonByType(PokemonType type);
     Optional<PokemonEntry> searchPokemonById(int id);
-
-    /**
-     * @param entry a pokemon of this pokedex
-     * @return the evolution that leads to the given pokemon, if any
-     */
     Optional<Evolution> getPreEvolution(PokemonEntry entry);
-
-    /**
-     * @param entry a pokemon of this pokedex
-     * @return the evolutions of the given pokemon, ordered by index of the evolved species (empty if none)
-     */
     List<Evolution> getPostEvolutions(PokemonEntry entry);
 }
