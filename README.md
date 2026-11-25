@@ -20,15 +20,17 @@ Le specie sono legate tra loro dalle **evoluzioni**: una specie si evolve in un'
 uno strumento (Pikachu si evolve in Raichu con la Pietratuono) oppure uno scambio con un altro allenatore.
 Una specie si evolve da al più un'altra, ma può evolversi in più specie diverse (Eevee si evolve in Vaporeon, Jolteon
 o Flareon, a seconda della pietra usata).
-Le evoluzioni formano così delle **catene** (Charmander → Charmeleon → Charizard) che non possono mai chiudersi su sé
-stesse; lungo una catena, i livelli richiesti crescono.
+Le evoluzioni formano così delle **catene** (Charmander, Charmeleon e poi Charizard) che non possono mai chiudersi su sé
+stesse. Lungo una catena, i livelli richiesti crescono.
 
-L'utente deve poter **sfogliare** l'elenco completo dei Pokémon in ordine di numero, **selezionarne** uno per vederne la
-scheda di dettaglio e **cercarlo** per nome.
-Come nel Pokédex dei giochi, le informazioni di un Pokémon **non ancora avvistato** devono rimanere nascoste:
+L'utente deve poter **sfogliare** l'elenco completo dei Pokémon in ordine di numero, 
+**selezionarne** uno per vederne la  scheda di dettaglio e **cercarlo** per nome.
+Come nel Pokédex dei giochi, 
+le informazioni di un Pokémon **non ancora avvistato** devono rimanere nascoste:
 di lui si conosce solo il numero, mentre nome, tipi, descrizione e immagine sono mostrati come `???`.
-L'utente può **registrare l'avvistamento** o **la cattura** di un Pokémon. Catturarne uno significa anche averlo
-avvistato, e quanto registrato non si può annullare.
+L'utente può **registrare l'avvistamento** o **la cattura** di un Pokémon. 
+Catturarne uno significa anche averlo  avvistato, e quanto registrato non si può annullare.
 
-Il catalogo delle specie, con le loro evoluzioni, è fisso e viene caricato da un file JSON distribuito con
-l'applicazione. I progressi dell'allenatore, invece, partono da zero a ogni avvio.
+Il catalogo delle specie, con le loro evoluzioni, 
+è fisso e viene caricato da un file distribuito con l'applicazione. 
+I progressi dell'allenatore, invece, partono da zero a ogni avvio.
