@@ -169,9 +169,7 @@ classDiagram
 
 **Problema.** La view deve poter essere sostituita senza modificare il controller (architettura), e la finestra ha
 due aree con comportamenti diversi: l'elenco con la ricerca e la scheda di dettaglio. Se un'unica classe le gestisse
-entrambe e parlasse con il controller, diventerebbe grande e difficile da modificare. In più, quando è il controller a
-selezionare un Pokémon (per esempio dopo una ricerca), l'elenco non deve notificare la selezione al controller, che
-altrimenti riceverebbe di nuovo la stessa richiesta.
+entrambe e parlasse con il controller, diventerebbe grande e difficile da modificare.
 
 **Soluzione.** Il controller conosce solo `PokedexView`. La sua implementazione JavaFX, `PokedexViewImpl`, è composta
 da due pannelli, ciascuno dietro un'interfaccia: `PokemonListPanel` e `PokemonDetailPanel`. Entrambe estendono `Panel`,
@@ -180,8 +178,6 @@ I pannelli **non conoscono il controller**: offrono metodi per registrare delle 
 `setOnSearch`, `setOnMarkAsSeen`, `setOnMarkAsCaught`). È `PokedexViewImpl`, in `setController`, a collegare ogni
 callback al metodo corrispondente del controller. Ogni pannello si può quindi modificare o riusare indipendentemente
 dal controller.
-`selectPokemon` cambia la selezione dell'elenco senza notificare le callback, e questo interrompe il ciclo
-controller → view → controller.
 La view riceve tutto ciò che deve mostrare come `DisplayedPokemon` (una specie e il suo stato di incontro): decide
 *come* nascondere un Pokémon non avvistato, ma non interroga il model per sapere *se* nasconderlo.
 

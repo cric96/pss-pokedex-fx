@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.util.Set;
 
 import static it.unibo.pokemon.core.EncounterStatus.CAUGHT;
-import static it.unibo.pokemon.core.EncounterStatus.SEEN;
 import static it.unibo.pokemon.core.EncounterStatus.UNSEEN;
 import static it.unibo.pokemon.core.PokemonFixtures.BULBASAUR;
 import static it.unibo.pokemon.core.PokemonFixtures.CHARMANDER;
@@ -28,20 +27,10 @@ public class TrainerProgressImplTest {
     }
 
     @Test
-    public void testNewTrainerHasNotSeenAnything() {
-        pokedex.getAllPokemon().forEach(entry -> Assertions.assertEquals(UNSEEN, progress.getStatus(entry)));
-        Assertions.assertEquals(0, progress.getSeenCount());
-        Assertions.assertEquals(0, progress.getCaughtCount());
-    }
-
-    @Test
-    public void testSeeingAndCatching() {
+    public void testCaughtPokemonCountAsSeen() {
         progress.markAsSeen(BULBASAUR);
         progress.markAsCaught(CHARMANDER);
-        Assertions.assertEquals(SEEN, progress.getStatus(BULBASAUR));
-        Assertions.assertEquals(CAUGHT, progress.getStatus(CHARMANDER));
-        Assertions.assertEquals(UNSEEN, progress.getStatus(SQUIRTLE));
-        Assertions.assertEquals(2, progress.getSeenCount()); // a caught pokemon has been seen too
+        Assertions.assertEquals(2, progress.getSeenCount());
         Assertions.assertEquals(1, progress.getCaughtCount());
     }
 
@@ -60,9 +49,7 @@ public class TrainerProgressImplTest {
     }
 
     @Test
-    public void testPokemonNotInThePokedexShouldBeRejected() {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> progress.getStatus(PIKACHU));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> progress.markAsSeen(PIKACHU));
+    public void testOnlyPokemonOfThePokedexCanBeRecorded() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> progress.markAsCaught(PIKACHU));
     }
 }

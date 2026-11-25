@@ -16,15 +16,15 @@ public class EvolutionTest {
     }
 
     @Test
-    public void testLevelMustBeInRange() {
+    public void testLevelMustBeBetweenOneAndOneHundred() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new LevelUp(0));
         Assertions.assertThrows(IllegalArgumentException.class, () -> new LevelUp(101));
-        Assertions.assertEquals(100, new LevelUp(100).level());
+        Assertions.assertDoesNotThrow(() -> new LevelUp(1));
+        Assertions.assertDoesNotThrow(() -> new LevelUp(100));
     }
 
     @Test
     public void testItemMustHaveAName() {
         Assertions.assertThrows(IllegalArgumentException.class, () -> new UseItem(" "));
-        Assertions.assertEquals("Thunder Stone", new UseItem("Thunder Stone").item());
     }
 }

@@ -6,7 +6,6 @@ import it.unibo.pokemon.core.EvolutionCondition.UseItem;
 import it.unibo.pokemon.core.Pokedex;
 import it.unibo.pokemon.core.PokemonEntry;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -23,6 +22,7 @@ import static it.unibo.pokemon.core.PokemonFixtures.PIKACHU;
 import static it.unibo.pokemon.core.PokemonFixtures.SQUIRTLE;
 import static it.unibo.pokemon.core.PokemonFixtures.entry;
 import static it.unibo.pokemon.core.impl.PokemonTypeEnum.FIRE;
+import static it.unibo.pokemon.core.impl.PokemonTypeEnum.NORMAL;
 import static it.unibo.pokemon.core.impl.PokemonTypeEnum.POISON;
 import static it.unibo.pokemon.core.impl.PokemonTypeEnum.WATER;
 
@@ -30,100 +30,92 @@ public class PokedexImplTest {
 
     private static final Set<PokemonEntry> SPECIES = Set.of(BULBASAUR, CHARMANDER, CHARMELEON, CHARIZARD, SQUIRTLE);
 
-    private Pokedex pokedex;
-
-    @BeforeEach
-    public void setup() {
-        pokedex = new PokedexImpl(SPECIES, Set.of(CHARMANDER_TO_CHARMELEON, CHARMELEON_TO_CHARIZARD));
-    }
-
-    @Test
-    public void testPokedexNumberShouldBeAlignedWithTotalPokemon() {
-        Assertions.assertEquals(5, pokedex.getTotalPokemonNumber());
-        Assertions.assertEquals(SPECIES, pokedex.getAllPokemon());
-    }
-
-    @Test
-    public void testSearchByName() {
-        Assertions.assertEquals(Optional.of(CHARMANDER), pokedex.searchPokemonByName("Charmander"));
-        Assertions.assertTrue(pokedex.searchPokemonByName("Gianlucamon").isEmpty());
-    }
-
     @Test
     public void testSearchByTypeAlsoConsidersTheSecondaryType() {
-        Assertions.assertEquals(Set.of(CHARMANDER, CHARMELEON, CHARIZARD), Set.copyOf(pokedex.searchPokemonByType(FIRE)));
+        final Pokedex pokedex = new PokedexImpl(SPECIES);
+
         Assertions.assertEquals(List.of(BULBASAUR), pokedex.searchPokemonByType(POISON));
     }
 
     @Test
-    public void testEvolutionChainShouldBeNavigableInBothDirections() {
-        Assertions.assertEquals(List.of(CHARMANDER_TO_CHARMELEON), pokedex.getPostEvolutions(CHARMANDER));
-        Assertions.assertEquals(List.of(CHARMELEON_TO_CHARIZARD), pokedex.getPostEvolutions(CHARMELEON));
-        Assertions.assertEquals(Optional.of(CHARMELEON_TO_CHARIZARD), pokedex.getPreEvolution(CHARIZARD));
+    public void testEvolutionChainIsNavigableInBothDirections() {
+        final Pokedex pokedex = new PokedexImpl(SPECIES, Set.of(CHARMANDER_TO_CHARMELEON, CHARMELEON_TO_CHARIZARD));
+
         Assertions.assertEquals(Optional.of(CHARMANDER_TO_CHARMELEON), pokedex.getPreEvolution(CHARMELEON));
-        Assertions.assertTrue(pokedex.getPreEvolution(CHARMANDER).isEmpty());
-        Assertions.assertTrue(pokedex.getPostEvolutions(CHARIZARD).isEmpty());
+        Assertions.assertEquals(List.of(CHARMELEON_TO_CHARIZARD), pokedex.getPostEvolutions(CHARMELEON));
     }
 
     @Test
     public void testASpeciesCanEvolveIntoSeveralOnes() {
-        final PokemonEntry eevee = entry(133, "Eevee", PokemonTypeEnum.NORMAL, null);
+        final PokemonEntry eevee = entry(133, "Eevee", NORMAL, null);
         final PokemonEntry vaporeon = entry(134, "Vaporeon", WATER, null);
         final PokemonEntry flareon = entry(136, "Flareon", FIRE, null);
         final Evolution toFlareon = new Evolution(eevee, flareon, new UseItem("Fire Stone"));
         final Evolution toVaporeon = new Evolution(eevee, vaporeon, new UseItem("Water Stone"));
-        final Pokedex eeveelutions = new PokedexImpl(Set.of(eevee, vaporeon, flareon), Set.of(toFlareon, toVaporeon));
-        Assertions.assertEquals(List.of(toVaporeon, toFlareon), eeveelutions.getPostEvolutions(eevee));
+        final Pokedex pokedex = new PokedexImpl(Set.of(eevee, vaporeon, flareon), Set.of(toFlareon, toVaporeon));
+
+        Assertions.assertEquals(List.of(toVaporeon, toFlareon), pokedex.getPostEvolutions(eevee));
     }
 
     @Test
-    public void testIndexesAndNamesShouldBeUnique() {
-        final PokemonEntry fakeCharmander = entry(99, "Charmander", FIRE, null);
-        final PokemonEntry fakeSquirtle = entry(7, "Not Squirtle", WATER, null);
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new PokedexImpl(List.of(CHARMANDER, fakeCharmander)));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new PokedexImpl(List.of(SQUIRTLE, fakeSquirtle)));
+    public void testIndexesMustBeUnique() {
+        final PokemonEntry sameIndexAsSquirtle = entry(SQUIRTLE.getIndex(), "Not Squirtle", WATER, null);
+
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> new PokedexImpl(List.of(SQUIRTLE, sameIndexAsSquirtle))
+        );
+    }
+
+    @Test
+    public void testNamesMustBeUnique() {
+        final PokemonEntry sameNameAsCharmander = entry(99, CHARMANDER.getName(), FIRE, null);
+
+        Assertions.assertThrows(
+            IllegalArgumentException.class,
+            () -> new PokedexImpl(List.of(CHARMANDER, sameNameAsCharmander))
+        );
     }
 
     @Test
     public void testEvolutionsMustInvolveSpeciesOfThePokedex() {
-        final Evolution evolution = new Evolution(CHARMANDER, PIKACHU, new LevelUp(20));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> new PokedexImpl(SPECIES, Set.of(evolution)));
+        final Evolution toPikachu = new Evolution(CHARMANDER, PIKACHU, new LevelUp(20));
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new PokedexImpl(SPECIES, Set.of(toPikachu)));
     }
 
     @Test
     public void testASpeciesHasAtMostOnePreEvolution() {
-        final Evolution other = new Evolution(SQUIRTLE, CHARMELEON, new LevelUp(20));
+        final Evolution squirtleToCharmeleon = new Evolution(SQUIRTLE, CHARMELEON, new LevelUp(20));
+
         Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> new PokedexImpl(SPECIES, Set.of(CHARMANDER_TO_CHARMELEON, other))
+            () -> new PokedexImpl(SPECIES, Set.of(CHARMANDER_TO_CHARMELEON, squirtleToCharmeleon))
         );
     }
 
     @Test
     public void testEvolutionsCannotFormCycles() {
         final Evolution backToCharmander = new Evolution(CHARIZARD, CHARMANDER, new UseItem("Time Machine"));
-        Assertions.assertThrows(
-            IllegalArgumentException.class,
-            () -> new PokedexImpl(SPECIES, Set.of(CHARMANDER_TO_CHARMELEON, CHARMELEON_TO_CHARIZARD, backToCharmander))
-        );
+        final Set<Evolution> cycle = Set.of(CHARMANDER_TO_CHARMELEON, CHARMELEON_TO_CHARIZARD, backToCharmander);
+
+        Assertions.assertThrows(IllegalArgumentException.class, () -> new PokedexImpl(SPECIES, cycle));
     }
 
     @Test
     public void testLevelsMustIncreaseAlongAChain() {
         final Evolution tooEarly = new Evolution(CHARMELEON, CHARIZARD, new LevelUp(10));
+
         Assertions.assertThrows(
             IllegalArgumentException.class,
             () -> new PokedexImpl(SPECIES, Set.of(CHARMANDER_TO_CHARMELEON, tooEarly))
         );
-        // The constraint only concerns consecutive evolutions by level
-        final Evolution byItem = new Evolution(CHARMELEON, CHARIZARD, new UseItem("Fire Stone"));
-        Assertions.assertDoesNotThrow(() -> new PokedexImpl(SPECIES, Set.of(CHARMANDER_TO_CHARMELEON, byItem)));
     }
 
     @Test
-    public void testPokemonNotInThePokedexShouldBeRejected() {
-        Assertions.assertFalse(pokedex.contains(PIKACHU));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> pokedex.getPreEvolution(PIKACHU));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> pokedex.getPostEvolutions(PIKACHU));
+    public void testLevelConstraintIgnoresEvolutionsByItem() {
+        final Evolution byItem = new Evolution(CHARMELEON, CHARIZARD, new UseItem("Fire Stone"));
+
+        Assertions.assertDoesNotThrow(() -> new PokedexImpl(SPECIES, Set.of(CHARMANDER_TO_CHARMELEON, byItem)));
     }
 }

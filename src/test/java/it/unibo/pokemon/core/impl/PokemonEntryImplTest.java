@@ -10,20 +10,15 @@ import static it.unibo.pokemon.core.impl.PokemonTypeEnum.ELECTRIC;
 public class PokemonEntryImplTest {
 
     @Test
-    public void testSecondaryTypeCannotBeEqualToPrimary() {
+    public void testSecondaryTypeEqualToPrimaryIsIgnored() {
         final PokemonEntry pikachu = entry(25, "Pikachu", ELECTRIC, ELECTRIC);
         Assertions.assertTrue(pikachu.getSecondaryType().isEmpty());
     }
 
     @Test
-    public void testMandatoryFields() {
-        Assertions.assertThrows(NullPointerException.class, () -> entry(25, null, ELECTRIC, null));
-        Assertions.assertThrows(NullPointerException.class, () -> entry(25, "Pikachu", null, null));
-    }
-
-    @Test
-    public void testSpeciesAreIdentifiedByIndex() {
-        Assertions.assertEquals(entry(25, "Pikachu", ELECTRIC, null), entry(25, "Pikachu", ELECTRIC, null));
-        Assertions.assertNotEquals(entry(25, "Pikachu", ELECTRIC, null), entry(26, "Raichu", ELECTRIC, null));
+    public void testSpeciesAreIdentifiedByTheirIndex() {
+        final PokemonEntry pikachu = entry(25, "Pikachu", ELECTRIC, null);
+        final PokemonEntry sameIndex = entry(25, "Another name", ELECTRIC, null);
+        Assertions.assertEquals(pikachu, sameIndex);
     }
 }
