@@ -7,8 +7,7 @@
     "type2": "POISON",
     "height": 0.7,
     "weight": 6.9,
-    "preEvolution": null,
-    "seen": false
+    "evolvesFrom": null
   },
   {
     "id": 2,
@@ -18,8 +17,10 @@
     "type2": "POISON",
     "height": 1.0,
     "weight": 13.0,
-    "preEvolution": "Bulbasaur",
-    "seen": false
+    "evolvesFrom": {
+      "pokemon": "Bulbasaur",
+      "level": 16
+    }
   },
   {
     "id": 3,
@@ -29,8 +30,10 @@
     "type2": "POISON",
     "height": 2.0,
     "weight": 100.0,
-    "preEvolution": "Ivysaur",
-    "seen": false
+    "evolvesFrom": {
+      "pokemon": "Ivysaur",
+      "level": 32
+    }
   },
   {
     "id": 4,
@@ -40,8 +43,7 @@
     "type2": null,
     "height": 0.6,
     "weight": 8.5,
-    "preEvolution": null,
-    "seen": true
+    "evolvesFrom": null
   },
   {
     "id": 5,
@@ -51,8 +53,10 @@
     "type2": null,
     "height": 1.1,
     "weight": 19.0,
-    "preEvolution": "Charmander",
-    "seen": true
+    "evolvesFrom": {
+      "pokemon": "Charmander",
+      "level": 16
+    }
   },
   {
     "id": 6,
@@ -62,8 +66,10 @@
     "type2": "FLYING",
     "height": 1.7,
     "weight": 90.5,
-    "preEvolution": "Charmeleon",
-    "seen": true
+    "evolvesFrom": {
+      "pokemon": "Charmeleon",
+      "level": 36
+    }
   },
   {
     "id": 7,
@@ -73,8 +79,7 @@
     "type2": null,
     "height": 0.5,
     "weight": 9.0,
-    "preEvolution": null,
-    "seen": false
+    "evolvesFrom": null
   },
   {
     "id": 8,
@@ -84,8 +89,10 @@
     "type2": null,
     "height": 1.0,
     "weight": 22.5,
-    "preEvolution": "Squirtle",
-    "seen": false
+    "evolvesFrom": {
+      "pokemon": "Squirtle",
+      "level": 16
+    }
   },
   {
     "id": 9,
@@ -95,8 +102,10 @@
     "type2": null,
     "height": 1.6,
     "weight": 85.5,
-    "preEvolution": "Wartortle",
-    "seen": false
+    "evolvesFrom": {
+      "pokemon": "Wartortle",
+      "level": 36
+    }
   },
   {
     "id": 10,
@@ -106,8 +115,7 @@
     "type2": null,
     "height": 0.3,
     "weight": 2.9,
-    "preEvolution": null,
-    "seen": false
+    "evolvesFrom": null
   },
   {
     "id": 11,
@@ -117,8 +125,10 @@
     "type2": null,
     "height": 0.7,
     "weight": 9.9,
-    "preEvolution": "Caterpie",
-    "seen": false
+    "evolvesFrom": {
+      "pokemon": "Caterpie",
+      "level": 7
+    }
   },
   {
     "id": 12,
@@ -128,7 +138,9 @@
     "type2": "FLYING",
     "height": 1.1,
     "weight": 32.0,
-    "preEvolution": "Metapod",
-    "seen": false
+    "evolvesFrom": {
+      "pokemon": "Metapod",
+      "level": 10
+    }
   }
 ]

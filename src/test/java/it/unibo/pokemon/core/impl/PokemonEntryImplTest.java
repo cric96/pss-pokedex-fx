@@ -4,37 +4,26 @@ import it.unibo.pokemon.core.PokemonEntry;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import static it.unibo.pokemon.core.PokemonFixtures.entry;
+import static it.unibo.pokemon.core.impl.PokemonTypeEnum.ELECTRIC;
+
 public class PokemonEntryImplTest {
 
     @Test
-    public void pokemonEntryTypeShouldNeverBeTheSame() {
-        final PokemonEntry pokemon = new PokemonEntryBuilderImpl()
-            .withIndex(25)
-            .withName("pikachu")
-            .withPrimaryType(PokemonTypeEnum.ELECTRIC)
-            .withSecondaryType(PokemonTypeEnum.ELECTRIC)
-            .build();
-        Assertions.assertTrue(pokemon.getSecondaryType().isEmpty());
+    public void testSecondaryTypeCannotBeEqualToPrimary() {
+        final PokemonEntry pikachu = entry(25, "Pikachu", ELECTRIC, ELECTRIC);
+        Assertions.assertTrue(pikachu.getSecondaryType().isEmpty());
     }
 
     @Test
-    public void pokemonEntryShouldNeverEvolveFromItself() {
-        final var pokemonBuilder = new PokemonEntryBuilderImpl()
-            .withIndex(25)
-            .withName("pikachu")
-            .withPrimaryType(PokemonTypeEnum.ELECTRIC)
-            .withPreEvolution(25);
-        Assertions.assertThrows(IllegalArgumentException.class, pokemonBuilder::build);
+    public void testMandatoryFields() {
+        Assertions.assertThrows(NullPointerException.class, () -> entry(25, null, ELECTRIC, null));
+        Assertions.assertThrows(NullPointerException.class, () -> entry(25, "Pikachu", null, null));
     }
 
     @Test
-    public void pokemonEntryShouldExposeItsPreEvolution() {
-        final PokemonEntry raichu = new PokemonEntryBuilderImpl()
-            .withIndex(26)
-            .withName("raichu")
-            .withPrimaryType(PokemonTypeEnum.ELECTRIC)
-            .withPreEvolution(25)
-            .build();
-        Assertions.assertEquals(25, raichu.getPreEvolutionIndex().orElseThrow());
+    public void testSpeciesAreIdentifiedByIndex() {
+        Assertions.assertEquals(entry(25, "Pikachu", ELECTRIC, null), entry(25, "Pikachu", ELECTRIC, null));
+        Assertions.assertNotEquals(entry(25, "Pikachu", ELECTRIC, null), entry(26, "Raichu", ELECTRIC, null));
     }
 }

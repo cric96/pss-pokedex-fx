@@ -14,9 +14,18 @@ public final class PokemonEntryImpl implements PokemonEntry {
     private final double height;
     private final PokemonType primaryType;
     private final PokemonType secondaryType;
-    private final Integer preEvolutionIndex;
     private final String imageUrl;
 
+    /**
+     * @param index the number of the species in the pokedex
+     * @param name the name
+     * @param description a short description
+     * @param weight the weight, in kg
+     * @param height the height, in m
+     * @param primaryType the primary type
+     * @param secondaryType the secondary type, or null if none (ignored if equal to the primary type)
+     * @param imageUrl the classpath resource of the image
+     */
     public PokemonEntryImpl(
         final int index,
         final String name,
@@ -25,12 +34,8 @@ public final class PokemonEntryImpl implements PokemonEntry {
         final double height,
         final PokemonType primaryType,
         final PokemonType secondaryType,
-        final Integer preEvolutionIndex,
         final String imageUrl
     ) {
-        if (preEvolutionIndex != null && preEvolutionIndex == index) {
-            throw new IllegalArgumentException("A pokemon cannot evolve from itself!");
-        }
         this.index = index;
         this.name = Objects.requireNonNull(name);
         this.description = Objects.requireNonNull(description);
@@ -38,7 +43,6 @@ public final class PokemonEntryImpl implements PokemonEntry {
         this.height = height;
         this.primaryType = Objects.requireNonNull(primaryType);
         this.secondaryType = primaryType.equals(secondaryType) ? null : secondaryType;
-        this.preEvolutionIndex = preEvolutionIndex;
         this.imageUrl = imageUrl;
     }
 
@@ -75,11 +79,6 @@ public final class PokemonEntryImpl implements PokemonEntry {
     @Override
     public Optional<PokemonType> getSecondaryType() {
         return Optional.ofNullable(this.secondaryType);
-    }
-
-    @Override
-    public Optional<Integer> getPreEvolutionIndex() {
-        return Optional.ofNullable(this.preEvolutionIndex);
     }
 
     @Override

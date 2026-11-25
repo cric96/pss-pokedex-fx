@@ -1,22 +1,28 @@
 package it.unibo.pokemon.core.impl;
 
+import it.unibo.pokemon.core.Evolution;
+import it.unibo.pokemon.core.EvolutionCondition;
 import it.unibo.pokemon.core.Pokedex;
 import it.unibo.pokemon.core.PokemonEntry;
 import it.unibo.pokemon.core.PokemonType;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-public class PokedexImpl implements Pokedex {
+public final class PokedexImpl implements Pokedex {
     private final Set<PokemonEntry> pokemon;
-    private final Set<Integer> seen;
+    private final Set<Evolution> evolutions;
+    /** Each species has at most one pre-evolution: we index evolutions by the evolved species. */
+    private final Map<PokemonEntry, Evolution> preEvolutions = new HashMap<>();
 
     /**
-     * Creates a pokedex in which no pokemon has been seen yet.
+     * Creates a pokedex without evolutions.
      * @param pokemon the known pokemon species
      */
     public PokedexImpl(final Collection<PokemonEntry> pokemon) {
@@ -25,15 +31,59 @@ public class PokedexImpl implements Pokedex {
 
     /**
      * @param pokemon the known pokemon species
-     * @param seenIndexes the indexes of the pokemon already seen by the user
+     * @param evolutions the evolutions between them
+     * @throws IllegalArgumentException if any constraint of the pokedex is violated
      */
-    public PokedexImpl(final Collection<PokemonEntry> pokemon, final Set<Integer> seenIndexes) {
+    public PokedexImpl(final Collection<PokemonEntry> pokemon, final Collection<Evolution> evolutions) {
+        checkUnique(pokemon);
+        this.pokemon = Set.copyOf(pokemon);
+        this.evolutions = Set.copyOf(evolutions);
+        for (final Evolution evolution : this.evolutions) {
+            if (!contains(evolution.from()) || !contains(evolution.to())) {
+                throw new IllegalArgumentException(evolution + " involves a pokemon not in the pokedex");
+            }
+            if (preEvolutions.put(evolution.to(), evolution) != null) {
+                throw new IllegalArgumentException(evolution.to() + " has more than one pre-evolution");
+            }
+        }
+        this.pokemon.forEach(this::checkNoCycles);
+        this.evolutions.forEach(this::checkIncreasingLevels);
+    }
+
+    private static void checkUnique(final Collection<PokemonEntry> pokemon) {
         if (pokemon.stream().map(PokemonEntry::getIndex).distinct().count() != pokemon.size()
             || pokemon.stream().map(PokemonEntry::getName).distinct().count() != pokemon.size()) {
             throw new IllegalArgumentException("Indexes and names must be unique in a pokedex");
         }
-        this.pokemon = Set.copyOf(pokemon);
-        this.seen = new HashSet<>(seenIndexes);
+    }
+
+    /*
+     * Walks back the chain of pre-evolutions: since each species has at most one pre-evolution,
+     * the chain is a path, and it is a cycle if it meets an already visited species.
+     */
+    private void checkNoCycles(final PokemonEntry start) {
+        final Set<PokemonEntry> visited = new HashSet<>();
+        Optional<PokemonEntry> current = Optional.of(start);
+        while (current.isPresent()) {
+            if (!visited.add(current.get())) {
+                throw new IllegalArgumentException("Evolution cycle involving " + start);
+            }
+            current = getPreEvolution(current.get()).map(Evolution::from);
+        }
+    }
+
+    /*
+     * Along a chain, two consecutive evolutions by level must require increasing levels
+     * (e.g., Charmander -16-> Charmeleon -36-> Charizard).
+     */
+    private void checkIncreasingLevels(final Evolution evolution) {
+        final Optional<Evolution> previous = getPreEvolution(evolution.from());
+        if (previous.isPresent()
+            && previous.get().condition() instanceof EvolutionCondition.LevelUp(final int previousLevel)
+            && evolution.condition() instanceof EvolutionCondition.LevelUp(final int level)
+            && level <= previousLevel) {
+            throw new IllegalArgumentException(evolution + " requires a level not greater than " + previous.get());
+        }
     }
 
     @Override
@@ -44,6 +94,11 @@ public class PokedexImpl implements Pokedex {
     @Override
     public Set<PokemonEntry> getAllPokemon() {
         return pokemon;
+    }
+
+    @Override
+    public boolean contains(final PokemonEntry entry) {
+        return pokemon.contains(entry);
     }
 
     @Override
@@ -69,33 +124,23 @@ public class PokedexImpl implements Pokedex {
     }
 
     @Override
-    public Optional<PokemonEntry> getPreEvolution(final PokemonEntry entry) {
-        return checkContained(entry).getPreEvolutionIndex().flatMap(this::searchPokemonById);
+    public Optional<Evolution> getPreEvolution(final PokemonEntry entry) {
+        checkContained(entry);
+        return Optional.ofNullable(preEvolutions.get(entry));
     }
 
     @Override
-    public List<PokemonEntry> getPostEvolutions(final PokemonEntry entry) {
+    public List<Evolution> getPostEvolutions(final PokemonEntry entry) {
         checkContained(entry);
-        return pokemon.stream()
-            .filter(candidate -> candidate.getPreEvolutionIndex().equals(Optional.of(entry.getIndex())))
-            .sorted(Comparator.comparingInt(PokemonEntry::getIndex))
+        return evolutions.stream()
+            .filter(evolution -> evolution.from().equals(entry))
+            .sorted(Comparator.comparingInt(evolution -> evolution.to().getIndex()))
             .toList();
     }
 
-    @Override
-    public boolean isSeen(final PokemonEntry entry) {
-        return seen.contains(checkContained(entry).getIndex());
-    }
-
-    @Override
-    public void markAsSeen(final PokemonEntry entry) {
-        seen.add(checkContained(entry).getIndex());
-    }
-
-    private PokemonEntry checkContained(final PokemonEntry entry) {
-        if (!pokemon.contains(entry)) {
+    private void checkContained(final PokemonEntry entry) {
+        if (!contains(entry)) {
             throw new IllegalArgumentException(entry + " does not belong to this pokedex");
         }
-        return entry;
     }
 }

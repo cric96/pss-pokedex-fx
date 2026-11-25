@@ -5,38 +5,27 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * The pokedex: the catalogue of all the known pokemon species,
- * together with the state of the user (which pokemon have been seen).
+ * The pokedex: the (immutable) catalogue of all the known pokemon species and of their evolutions.
+ * It guarantees the constraints that involve several species or evolutions: unique indexes and names,
+ * at most one pre-evolution per species, no evolution cycles, increasing levels along a chain.
  */
 public interface Pokedex {
     int getTotalPokemonNumber();
     Set<PokemonEntry> getAllPokemon();
+    boolean contains(PokemonEntry entry);
     Optional<PokemonEntry> searchPokemonByName(String name);
     List<PokemonEntry> searchPokemonByType(PokemonType type);
     Optional<PokemonEntry> searchPokemonById(int id);
 
     /**
      * @param entry a pokemon of this pokedex
-     * @return the pokemon from which the given one evolves, if any
+     * @return the evolution that leads to the given pokemon, if any
      */
-    Optional<PokemonEntry> getPreEvolution(PokemonEntry entry);
+    Optional<Evolution> getPreEvolution(PokemonEntry entry);
 
     /**
      * @param entry a pokemon of this pokedex
-     * @return the pokemon into which the given one evolves, ordered by index (empty if none)
+     * @return the evolutions of the given pokemon, ordered by index of the evolved species (empty if none)
      */
-    List<PokemonEntry> getPostEvolutions(PokemonEntry entry);
-
-    /**
-     * @param entry a pokemon of this pokedex
-     * @return true if the user has already seen the given pokemon
-     */
-    boolean isSeen(PokemonEntry entry);
-
-    /**
-     * Records that the user has seen the given pokemon.
-     * @param entry a pokemon of this pokedex
-     * @throws IllegalArgumentException if the pokemon does not belong to this pokedex
-     */
-    void markAsSeen(PokemonEntry entry);
+    List<Evolution> getPostEvolutions(PokemonEntry entry);
 }

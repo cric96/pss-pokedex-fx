@@ -15,9 +15,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+/**
+ * Builds a {@link Pokedex} from its JSON description.
+ */
 public class PokedexLoader {
 
     private static final String DEFAULT_POKEDEX_JSON_PATH = "/it/unibo/pokemon/pokedex.json";
@@ -38,30 +42,33 @@ public class PokedexLoader {
         return new PokedexLoader(is).load();
     }
 
+    /**
+     * @return the pokedex described by the input stream
+     * @throws IllegalStateException if the input cannot be read or is not a valid pokedex
+     */
     public Pokedex load() {
-        final Type pokemonListType = new TypeToken<List<PokemonJsonData>>() { }.getType();
-        final List<PokemonJsonData> dataList;
+        final Type pokemonListType = new TypeToken<List<PokemonJson>>() { }.getType();
+        final List<PokemonJson> dataList;
         try (var reader = new InputStreamReader(inputStream, StandardCharsets.UTF_8)) {
             dataList = new Gson().fromJson(reader, pokemonListType);
         } catch (final IOException e) {
             throw new IllegalStateException("Cannot read the pokedex", e);
         }
-        // In the JSON evolutions are referenced by name: resolve them to indexes.
-        final Map<String, Integer> indexByName = dataList.stream()
-            .collect(Collectors.toMap(PokemonJsonData::name, PokemonJsonData::id));
-        final List<PokemonEntry> entries = dataList.stream()
-            .map(data -> createEntry(data, indexByName))
+        final Map<String, PokemonEntry> entriesByName = dataList.stream()
+            .collect(Collectors.toMap(PokemonJson::name, PokedexLoader::createEntry));
+        // In the JSON evolutions are referenced by name: resolve them to the entries.
+        final List<Evolution> evolutions = dataList.stream()
+            .filter(data -> data.evolvesFrom() != null)
+            .map(data -> createEvolution(data, entriesByName::get))
             .toList();
-        final Set<Integer> seen = dataList.stream()
-            .filter(PokemonJsonData::seen)
-            .map(PokemonJsonData::id)
-            .collect(Collectors.toSet());
-        return new PokedexImpl(entries, seen);
+        try {
+            return new PokedexImpl(entriesByName.values(), evolutions);
+        } catch (final IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid pokedex: " + e.getMessage(), e);
+        }
     }
 
-    private PokemonEntry createEntry(final PokemonJsonData data, final Map<String, Integer> indexByName) {
-        final PokemonType secondaryType = data.type2() == null ? null : PokemonTypeEnum.valueOf(data.type2());
-        final Integer preEvolution = data.preEvolution() == null ? null : indexByName.get(data.preEvolution());
+    private static PokemonEntry createEntry(final PokemonJson data) {
         return new PokemonEntryImpl(
             data.id(),
             data.name(),
@@ -69,13 +76,33 @@ public class PokedexLoader {
             data.weight(),
             data.height(),
             PokemonTypeEnum.valueOf(data.type1()),
-            secondaryType,
-            preEvolution,
+            data.type2() == null ? null : PokemonTypeEnum.valueOf(data.type2()),
             IMAGES_PATH + String.format("%04d.png", data.id())
         );
     }
 
-    private record PokemonJsonData(
+    private static Evolution createEvolution(final PokemonJson data, final Function<String, PokemonEntry> byName) {
+        final EvolvesFromJson evolvesFrom = data.evolvesFrom();
+        final PokemonEntry from = byName.apply(evolvesFrom.pokemon());
+        if (from == null) {
+            throw new IllegalStateException(data.name() + " evolves from an unknown pokemon: " + evolvesFrom.pokemon());
+        }
+        return new Evolution(from, byName.apply(data.name()), createCondition(data.name(), evolvesFrom));
+    }
+
+    private static EvolutionCondition createCondition(final String name, final EvolvesFromJson json) {
+        final List<EvolutionCondition> conditions = Stream.<EvolutionCondition>of(
+            json.level() == null ? null : new EvolutionCondition.LevelUp(json.level()),
+            json.item() == null ? null : new EvolutionCondition.UseItem(json.item()),
+            json.trade() ? new EvolutionCondition.Trade() : null
+        ).filter(Objects::nonNull).toList();
+        if (conditions.size() != 1) {
+            throw new IllegalStateException("The evolution of " + name + " must have exactly one condition");
+        }
+        return conditions.getFirst();
+    }
+
+    private record PokemonJson(
         int id,
         String name,
         String description,
@@ -83,7 +110,11 @@ public class PokedexLoader {
         String type2,
         double height,
         double weight,
-        String preEvolution,
-        boolean seen
+        EvolvesFromJson evolvesFrom
     ) { }
+
+    /**
+     * Exactly one among level, item and trade must be set.
+     */
+    private record EvolvesFromJson(String pokemon, Integer level, String item, boolean trade) { }
 }
